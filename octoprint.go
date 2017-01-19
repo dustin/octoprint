@@ -2,6 +2,7 @@ package octoprint
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"net/url"
 
@@ -16,6 +17,7 @@ type Client struct {
 func (c *Client) fetch(path string, o interface{}) error {
 	u := *c.base
 	u.Path = path
+	log.Printf("Fetching from %v %v", u.String(), c.token)
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
 		return err
