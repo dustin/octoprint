@@ -64,7 +64,7 @@ type TimelapseConfig struct {
 }
 
 type Timelapse struct {
-	Bytes   int    `json:"bytes"`
+	Size    int64  `json:"bytes"`
 	DateStr string `json:"date"`
 	Name    string `json:"name"`
 	SizeStr string `json:"size"`
