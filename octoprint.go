@@ -3,7 +3,6 @@ package octoprint
 import (
 	"encoding/json"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 
@@ -23,7 +22,6 @@ func (c *Client) URL(path string) *url.URL {
 
 func (c *Client) fetch(path string) (io.ReadCloser, error) {
 	u := c.URL(path)
-	log.Printf("Fetching from %v %v", u.String(), c.token)
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
 		return nil, err
