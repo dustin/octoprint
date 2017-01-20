@@ -14,9 +14,14 @@ type Client struct {
 	token string
 }
 
-func (c *Client) fetch(path string, o interface{}) error {
+func (c *Client) URL(path string) *url.URL {
 	u := *c.base
 	u.Path = path
+	return &u
+}
+
+func (c *Client) fetch(path string, o interface{}) error {
+	u := c.URL(path)
 	log.Printf("Fetching from %v %v", u.String(), c.token)
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
