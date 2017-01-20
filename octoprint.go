@@ -86,6 +86,14 @@ func (t Timelapse) Fetch() (io.ReadCloser, error) {
 	return t.c.fetch(t.Path)
 }
 
+func (t Timelapse) Delete() error {
+	r, err := t.c.do("DELETE", "/api/timelapse/"+t.Name, nil)
+	if err != nil {
+		return err
+	}
+	return r.Close()
+}
+
 func (c *Client) ListTimelapses() (*TimelapseConfig, []Timelapse, error) {
 	v := struct {
 		Config TimelapseConfig
