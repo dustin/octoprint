@@ -192,6 +192,7 @@ func dlTimelineCmd(c *octoprint.Client, args []string) {
 				defer os.Remove(dest)
 				return err
 			}
+			defer r.Close()
 			_, err = io.Copy(f, r)
 			return err
 		})
