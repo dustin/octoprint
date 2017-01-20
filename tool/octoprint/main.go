@@ -173,24 +173,27 @@ func dlTimelineCmd(c *octoprint.Client, args []string) {
 			sem <- true
 			defer func() { <-sem }()
 			dest := filepath.Join(args[0], tl.Name)
-			log.Printf("Downloading %v -> %v", tl.Name, dest)
 
-			f, err := os.OpenFile(dest+".tmp", os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0666)
-			if os.IsExist(err) {
+			st, err := os.Stat(dest)
+			if err == nil && st.Size() == tl.Size {
 				return nil
 			}
+
+			log.Printf("Downloading %v -> %v (%v)", tl.Name, dest, tl.Size)
+
+			f, err := os.OpenFile(dest, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0666)
+			if err != nil {
+				return err
+			}
 			defer f.Close()
-			defer os.Remove(dest + ".tmp")
 
 			r, err := tl.Fetch()
 			if err != nil {
+				defer os.Remove(dest)
 				return err
 			}
 			_, err = io.Copy(f, r)
-			if err != nil {
-				return err
-			}
-			return os.Rename(dest+".tmp", dest)
+			return err
 		})
 	}
 
