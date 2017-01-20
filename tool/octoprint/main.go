@@ -137,7 +137,7 @@ func toolMain(commands map[string]Command) {
 		}
 	}
 
-	cmd.F(c, args)
+	cmd.F(c, cmd.Flags.Args())
 }
 
 var (
