@@ -20,9 +20,9 @@ func (c *Client) url(path string) *url.URL {
 	return &u
 }
 
-func (c *Client) fetch(path string) (io.ReadCloser, error) {
+func (c *Client) do(method, path string, r io.ReadCloser) (io.ReadCloser, error) {
 	u := c.url(path)
-	req, err := http.NewRequest("GET", u.String(), nil)
+	req, err := http.NewRequest(method, u.String(), r)
 	if err != nil {
 		return nil, err
 	}
@@ -36,6 +36,11 @@ func (c *Client) fetch(path string) (io.ReadCloser, error) {
 		return nil, httputil.HTTPError(res)
 	}
 	return res.Body, nil
+
+}
+
+func (c *Client) fetch(path string) (io.ReadCloser, error) {
+	return c.do("GET", path, nil)
 }
 
 func (c *Client) fetchJSON(path string, o interface{}) error {
