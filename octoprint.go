@@ -14,14 +14,14 @@ type Client struct {
 	token string
 }
 
-func (c *Client) URL(path string) *url.URL {
+func (c *Client) url(path string) *url.URL {
 	u := *c.base
 	u.Path = path
 	return &u
 }
 
 func (c *Client) fetch(path string) (io.ReadCloser, error) {
-	u := c.URL(path)
+	u := c.url(path)
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
 		return nil, err
@@ -74,7 +74,7 @@ type Timelapse struct {
 }
 
 func (t Timelapse) URL() *url.URL {
-	return t.c.URL(t.Path)
+	return t.c.url(t.Path)
 }
 
 func (t Timelapse) Fetch() (io.ReadCloser, error) {
