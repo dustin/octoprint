@@ -145,6 +145,7 @@ var (
 	dlTimelineFlags = flag.NewFlagSet("dl", flag.ExitOnError)
 
 	dlConc = dlTimelineFlags.Int("concurrency", 4, "how many concurrent downloads to perform")
+	dlRm   = dlTimelineFlags.Bool("rm", false, "delete already synced items")
 )
 
 func lsTimelineCmd(c *octoprint.Client, args []string) {
@@ -176,6 +177,10 @@ func dlTimelineCmd(c *octoprint.Client, args []string) {
 
 			st, err := os.Stat(dest)
 			if err == nil && st.Size() == tl.Size {
+				if *dlRm {
+					log.Printf("Deleting (already present) %v", tl.Name)
+					return tl.Delete()
+				}
 				return nil
 			}
 
@@ -194,6 +199,13 @@ func dlTimelineCmd(c *octoprint.Client, args []string) {
 			}
 			defer r.Close()
 			_, err = io.Copy(f, r)
+			if err != nil {
+				return err
+			}
+			if *dlRm {
+				log.Printf("Deleting %v", tl.Name)
+				return tl.Delete()
+			}
 			return err
 		})
 	}
