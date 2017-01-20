@@ -3,13 +3,19 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net/url"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"text/tabwriter"
 
+	"golang.org/x/net/context"
+	"golang.org/x/sync/errgroup"
+
+	"github.com/dustin/httputil"
 	"github.com/dustin/octoprint"
 )
 
@@ -134,7 +140,12 @@ func toolMain(commands map[string]Command) {
 	cmd.F(c, args)
 }
 
-var lsTimelineFlags = flag.NewFlagSet("ls", flag.ExitOnError)
+var (
+	lsTimelineFlags = flag.NewFlagSet("ls", flag.ExitOnError)
+	dlTimelineFlags = flag.NewFlagSet("dl", flag.ExitOnError)
+
+	dlConc = dlTimelineFlags.Int("concurrency", 4, "how many concurrent downloads to perform")
+)
 
 func lsTimelineCmd(c *octoprint.Client, args []string) {
 	_, tls, err := c.ListTimelapses()
@@ -143,14 +154,56 @@ func lsTimelineCmd(c *octoprint.Client, args []string) {
 	}
 	tw := tabwriter.NewWriter(os.Stdout, 2, 4, 2, ' ', 0)
 	for _, tl := range tls {
-		fmt.Fprintf(tw, "%v\t%v\t%v\n", tl.Name, tl.DateStr, tl.SizeStr)
+		fmt.Fprintf(tw, "%v\t%v\t%v\t%v\n", tl.Name, tl.DateStr, tl.SizeStr, tl.URL())
 	}
 	tw.Flush()
 }
 
+func dlTimelineCmd(c *octoprint.Client, args []string) {
+	_, tls, err := c.ListTimelapses()
+	if err != nil {
+		log.Fatalf("Error listing timelapses: %v", err)
+	}
+	grp, _ := errgroup.WithContext(context.Background())
+
+	sem := make(chan bool, *dlConc)
+	for _, tl := range tls {
+		tl := tl
+		grp.Go(func() error {
+			sem <- true
+			defer func() { <-sem }()
+			dest := filepath.Join(args[0], tl.Name)
+			log.Printf("Downloading %v -> %v", tl.Name, dest)
+
+			f, err := os.OpenFile(dest+".tmp", os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0666)
+			if os.IsExist(err) {
+				return nil
+			}
+			defer f.Close()
+			defer os.Remove(dest + ".tmp")
+
+			r, err := tl.Fetch()
+			if err != nil {
+				return err
+			}
+			_, err = io.Copy(f, r)
+			if err != nil {
+				return err
+			}
+			return os.Rename(dest+".tmp", dest)
+		})
+	}
+
+	if err := grp.Wait(); err != nil {
+		log.Fatalf("Error downloading: %v", err)
+	}
+}
+
 func main() {
+	httputil.InitHTTPTracker(false)
 	toolMain(
 		map[string]Command{
 			"ls": {0, lsTimelineCmd, "", lsTimelineFlags},
+			"dl": {1, dlTimelineCmd, "", dlTimelineFlags},
 		})
 }

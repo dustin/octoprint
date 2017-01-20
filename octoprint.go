@@ -2,6 +2,7 @@ package octoprint
 
 import (
 	"encoding/json"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -20,26 +21,32 @@ func (c *Client) URL(path string) *url.URL {
 	return &u
 }
 
-func (c *Client) fetch(path string, o interface{}) error {
+func (c *Client) fetch(path string) (io.ReadCloser, error) {
 	u := c.URL(path)
 	log.Printf("Fetching from %v %v", u.String(), c.token)
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	req.Header.Set("X-Api-Key", c.token)
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil
+		return nil, nil
 	}
-	defer res.Body.Close()
 	if res.StatusCode != 200 {
-		return httputil.HTTPError(res)
+		defer res.Body.Close()
+		return nil, httputil.HTTPError(res)
 	}
+	return res.Body, nil
+}
 
-	d := json.NewDecoder(res.Body)
-	return d.Decode(o)
-
+func (c *Client) fetchJSON(path string, o interface{}) error {
+	r, err := c.fetch(path)
+	if err != nil {
+		return err
+	}
+	defer r.Close()
+	return json.NewDecoder(r).Decode(o)
 }
 
 func New(base, token string) (*Client, error) {
@@ -63,7 +70,17 @@ type Timelapse struct {
 	DateStr string `json:"date"`
 	Name    string `json:"name"`
 	SizeStr string `json:"size"`
-	URL     string `json:"url"`
+	Path    string `json:"url"`
+
+	c *Client
+}
+
+func (t Timelapse) URL() *url.URL {
+	return t.c.URL(t.Path)
+}
+
+func (t Timelapse) Fetch() (io.ReadCloser, error) {
+	return t.c.fetch(t.Path)
 }
 
 func (c *Client) ListTimelapses() (*TimelapseConfig, []Timelapse, error) {
@@ -72,8 +89,12 @@ func (c *Client) ListTimelapses() (*TimelapseConfig, []Timelapse, error) {
 		Files  []Timelapse
 	}{}
 
-	if err := c.fetch("/api/timelapse", &v); err != nil {
+	if err := c.fetchJSON("/api/timelapse", &v); err != nil {
 		return nil, nil, err
+	}
+
+	for i := range v.Files {
+		v.Files[i].c = c
 	}
 
 	return &v.Config, v.Files, nil
