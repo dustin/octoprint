@@ -1,3 +1,4 @@
+// Package octoprint facilitates communcation to an octoprint server.
 package octoprint
 
 import (
@@ -9,6 +10,7 @@ import (
 	"github.com/dustin/httputil"
 )
 
+// A Client to an octoprint server.
 type Client struct {
 	base  *url.URL
 	token string
@@ -52,6 +54,7 @@ func (c *Client) fetchJSON(path string, o interface{}) error {
 	return json.NewDecoder(r).Decode(o)
 }
 
+// New creates a connection to an octoprint server.
 func New(base, token string) (*Client, error) {
 	u, err := url.Parse(base)
 	if err != nil {
@@ -60,6 +63,7 @@ func New(base, token string) (*Client, error) {
 	return &Client{u, token}, nil
 }
 
+// TimelapseConfig represents the configuration of tapelapse recording.
 type TimelapseConfig struct {
 	CapturePostRoll bool   `json:"capturePostRoll"`
 	FPS             int    `json:"fps"`
@@ -68,6 +72,7 @@ type TimelapseConfig struct {
 	Type            string `json:"type"`
 }
 
+// A Timelapse entry contains all the fields representing a timelapse recording.
 type Timelapse struct {
 	Size    int64  `json:"bytes"`
 	DateStr string `json:"date"`
@@ -78,14 +83,17 @@ type Timelapse struct {
 	c *Client
 }
 
+// URL returns the URL to the timelapse video on octoprint.
 func (t Timelapse) URL() *url.URL {
 	return t.c.url(t.Path)
 }
 
+// Fetch a timelapse video from octoprint.
 func (t Timelapse) Fetch() (io.ReadCloser, error) {
 	return t.c.fetch(t.Path)
 }
 
+// Delete a timelapse video from the octoprint server.
 func (t Timelapse) Delete() error {
 	r, err := t.c.do("DELETE", "/api/timelapse/"+t.Name, nil)
 	if err != nil {
@@ -94,6 +102,7 @@ func (t Timelapse) Delete() error {
 	return r.Close()
 }
 
+// ListTimelapses lists all of the available timelapse videos on the octoprint server.
 func (c *Client) ListTimelapses() (*TimelapseConfig, []Timelapse, error) {
 	v := struct {
 		Config TimelapseConfig
