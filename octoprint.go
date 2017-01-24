@@ -33,7 +33,7 @@ func (c *Client) do(method, path string, r io.ReadCloser) (io.ReadCloser, error)
 	req.Header.Set("X-Api-Key", c.token)
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 	if res.StatusCode != 200 {
 		defer res.Body.Close()
