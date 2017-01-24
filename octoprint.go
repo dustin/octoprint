@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"net/url"
 
+	"golang.org/x/net/context"
+
 	"github.com/dustin/httputil"
 )
 
@@ -89,12 +91,12 @@ func (t Timelapse) URL() *url.URL {
 }
 
 // Fetch a timelapse video from octoprint.
-func (t Timelapse) Fetch() (io.ReadCloser, error) {
+func (t Timelapse) Fetch(ctx context.Context) (io.ReadCloser, error) {
 	return t.c.fetch(t.Path)
 }
 
 // Delete a timelapse video from the octoprint server.
-func (t Timelapse) Delete() error {
+func (t Timelapse) Delete(ctx context.Context) error {
 	r, err := t.c.do("DELETE", "/api/timelapse/"+t.Name, nil)
 	if err != nil {
 		return err
@@ -103,7 +105,7 @@ func (t Timelapse) Delete() error {
 }
 
 // ListTimelapses lists all of the available timelapse videos on the octoprint server.
-func (c *Client) ListTimelapses() (*TimelapseConfig, []Timelapse, error) {
+func (c *Client) ListTimelapses(ctx context.Context) (*TimelapseConfig, []Timelapse, error) {
 	v := struct {
 		Config TimelapseConfig
 		Files  []Timelapse

@@ -25,8 +25,8 @@ var (
 	dlRm   = dlTimelineFlags.Bool("rm", false, "delete already synced items")
 )
 
-func lsTimelineCmd(c *octoprint.Client, args []string) {
-	_, tls, err := c.ListTimelapses()
+func lsTimelineCmd(ctx context.Context, c *octoprint.Client, args []string) {
+	_, tls, err := c.ListTimelapses(ctx)
 	if err != nil {
 		log.Fatalf("Error listing timelapses: %v", err)
 	}
@@ -37,12 +37,12 @@ func lsTimelineCmd(c *octoprint.Client, args []string) {
 	tw.Flush()
 }
 
-func dlTimelineCmd(c *octoprint.Client, args []string) {
-	_, tls, err := c.ListTimelapses()
+func dlTimelineCmd(ctx context.Context, c *octoprint.Client, args []string) {
+	_, tls, err := c.ListTimelapses(ctx)
 	if err != nil {
 		log.Fatalf("Error listing timelapses: %v", err)
 	}
-	grp, _ := errgroup.WithContext(context.Background())
+	grp, _ := errgroup.WithContext(ctx)
 
 	sem := make(chan bool, *dlConc)
 	for _, tl := range tls {
@@ -56,7 +56,7 @@ func dlTimelineCmd(c *octoprint.Client, args []string) {
 			if err == nil && st.Size() == tl.Size {
 				if *dlRm {
 					log.Printf("Deleting (already present) %v", tl.Name)
-					return tl.Delete()
+					return tl.Delete(ctx)
 				}
 				return nil
 			}
@@ -69,7 +69,7 @@ func dlTimelineCmd(c *octoprint.Client, args []string) {
 			}
 			defer f.Close()
 
-			r, err := tl.Fetch()
+			r, err := tl.Fetch(ctx)
 			if err != nil {
 				defer os.Remove(dest)
 				return err
@@ -81,7 +81,7 @@ func dlTimelineCmd(c *octoprint.Client, args []string) {
 			}
 			if *dlRm {
 				log.Printf("Deleting %v", tl.Name)
-				return tl.Delete()
+				return tl.Delete(ctx)
 			}
 			return err
 		})
@@ -94,7 +94,7 @@ func dlTimelineCmd(c *octoprint.Client, args []string) {
 
 func main() {
 	httputil.InitHTTPTracker(false)
-	tool.ToolMain(
+	tool.ToolMain(context.Background(),
 		map[string]tool.Command{
 			"ls": {0, lsTimelineCmd, "", lsTimelineFlags},
 			"dl": {1, dlTimelineCmd, "", dlTimelineFlags},

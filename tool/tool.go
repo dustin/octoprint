@@ -9,6 +9,8 @@ import (
 	"sort"
 	"strings"
 
+	"golang.org/x/net/context"
+
 	"github.com/dustin/octoprint"
 )
 
@@ -16,7 +18,7 @@ var token = flag.String("token", "", "octoprint token")
 
 type Command struct {
 	Nargs  int
-	F      func(c *octoprint.Client, args []string)
+	F      func(context.Context, *octoprint.Client, []string)
 	Argstr string
 	Flags  *flag.FlagSet
 }
@@ -79,7 +81,7 @@ func ParseURL(ustr string) *url.URL {
 	return u
 }
 
-func ToolMain(commands map[string]Command) {
+func ToolMain(ctx context.Context, commands map[string]Command) {
 	log.SetFlags(log.Lmicroseconds)
 
 	setUsage(commands)
@@ -130,5 +132,5 @@ func ToolMain(commands map[string]Command) {
 		}
 	}
 
-	cmd.F(c, cmd.Flags.Args())
+	cmd.F(ctx, c, cmd.Flags.Args())
 }
