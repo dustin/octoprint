@@ -1,3 +1,4 @@
+// Package tool provides common functionality for octoprint commandline tools.
 package tool
 
 import (
@@ -16,6 +17,7 @@ import (
 
 var token = flag.String("token", "", "octoprint token")
 
+// Command represents a single command and its arguments.
 type Command struct {
 	Nargs  int
 	F      func(context.Context, *octoprint.Client, []string)
