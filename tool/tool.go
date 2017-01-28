@@ -65,24 +65,30 @@ func setUsage(commands map[string]Command) {
 	}
 }
 
+// MaybeFatal terminates the program with the given error if the error is not nil.
 func MaybeFatal(err error, msg string, args ...interface{}) {
 	if err != nil {
 		log.Fatalf(msg, args...)
 	}
 }
 
+// Verbose logs if v is true.
 func Verbose(v bool, f string, a ...interface{}) {
 	if v {
 		log.Printf(f, a...)
 	}
 }
 
+// ParseURL parses a URL with a fatal error if the URL can't be parsed.
 func ParseURL(ustr string) *url.URL {
 	u, err := url.Parse(ustr)
 	MaybeFatal(err, "Error parsing URL: %v", err)
 	return u
 }
 
+// ToolMain initializes all of the commandline definitions passed in,
+// creates the client for octopi and dispatches to the appropriate
+// commandline tool.
 func ToolMain(ctx context.Context, commands map[string]Command) {
 	log.SetFlags(log.Lmicroseconds)
 
