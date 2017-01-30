@@ -1,6 +1,6 @@
-# octospan
+# octolapse
 
-octospan is a tool for interacting with octoprint timelapse videos.
+octolapse is a tool for interacting with octoprint timelapse videos.
 
 ```
 cmd [-opts] cmdargs
