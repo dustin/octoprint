@@ -2,6 +2,7 @@
 package tool
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -9,8 +10,6 @@ import (
 	"os"
 	"sort"
 	"strings"
-
-	"golang.org/x/net/context"
 
 	"github.com/dustin/octoprint"
 )

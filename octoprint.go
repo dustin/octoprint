@@ -2,12 +2,11 @@
 package octoprint
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
 	"net/url"
-
-	"golang.org/x/net/context"
 
 	"github.com/dustin/httputil"
 )

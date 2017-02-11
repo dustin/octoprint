@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -8,7 +9,6 @@ import (
 	"text/tabwriter"
 
 	"github.com/dustin/octoprint"
-	"golang.org/x/net/context"
 )
 
 var (

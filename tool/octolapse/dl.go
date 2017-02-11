@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"io"
 	"log"
@@ -8,7 +9,6 @@ import (
 	"path/filepath"
 
 	"github.com/dustin/octoprint"
-	"golang.org/x/net/context"
 	"golang.org/x/sync/errgroup"
 )
 

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"golang.org/x/net/context"
+	"context"
 
 	"github.com/dustin/httputil"
 	"github.com/dustin/octoprint/tool"
