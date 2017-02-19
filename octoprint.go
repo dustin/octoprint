@@ -17,14 +17,15 @@ type Client struct {
 	token string
 }
 
-func (c *Client) url(path string) *url.URL {
+func (c *Client) url(path, query string) *url.URL {
 	u := *c.base
 	u.Path = path
+	u.RawQuery = query
 	return &u
 }
 
-func (c *Client) do(ctx context.Context, method, path string, r io.ReadCloser) (io.ReadCloser, error) {
-	u := c.url(path)
+func (c *Client) do(ctx context.Context, method, path, query string, r io.ReadCloser) (io.ReadCloser, error) {
+	u := c.url(path, query)
 	req, err := http.NewRequest(method, u.String(), r)
 	if err != nil {
 		return nil, err
@@ -43,12 +44,12 @@ func (c *Client) do(ctx context.Context, method, path string, r io.ReadCloser) (
 
 }
 
-func (c *Client) fetch(ctx context.Context, path string) (io.ReadCloser, error) {
-	return c.do(ctx, "GET", path, nil)
+func (c *Client) fetch(ctx context.Context, path, query string) (io.ReadCloser, error) {
+	return c.do(ctx, "GET", path, query, nil)
 }
 
-func (c *Client) fetchJSON(ctx context.Context, path string, o interface{}) error {
-	r, err := c.fetch(ctx, path)
+func (c *Client) fetchJSON(ctx context.Context, path, query string, o interface{}) error {
+	r, err := c.fetch(ctx, path, query)
 	if err != nil {
 		return err
 	}

@@ -29,17 +29,17 @@ type Timelapse struct {
 
 // URL returns the URL to the timelapse video on octoprint.
 func (t Timelapse) URL() *url.URL {
-	return t.c.url(t.Path)
+	return t.c.url(t.Path, "")
 }
 
 // Fetch a timelapse video from octoprint.
 func (t Timelapse) Fetch(ctx context.Context) (io.ReadCloser, error) {
-	return t.c.fetch(ctx, t.Path)
+	return t.c.fetch(ctx, t.Path, "")
 }
 
 // Delete a timelapse video from the octoprint server.
 func (t Timelapse) Delete(ctx context.Context) error {
-	r, err := t.c.do(ctx, "DELETE", "/api/timelapse/"+t.Name, nil)
+	r, err := t.c.do(ctx, "DELETE", "/api/timelapse/"+t.Name, "", nil)
 	if err != nil {
 		return err
 	}
@@ -53,7 +53,7 @@ func (c *Client) ListTimelapses(ctx context.Context) (*TimelapseConfig, []Timela
 		Files  []Timelapse
 	}{}
 
-	if err := c.fetchJSON(ctx, "/api/timelapse", &v); err != nil {
+	if err := c.fetchJSON(ctx, "/api/timelapse", "", &v); err != nil {
 		return nil, nil, err
 	}
 
