@@ -17,6 +17,7 @@ var (
 
 	stateHist = showStateFlags.Int("history", 0, "how much history to grab")
 	stateFmt  = showStateFlags.String("format", "plain", "plain | csv")
+	stateTail = showStateFlags.Bool("tail", false, "continuously watch state")
 )
 
 func maybePrintTemp(prefix string, t *octoprint.PrinterTempState) {
@@ -74,4 +75,23 @@ func showState(ctx context.Context, c *octoprint.Client, args []string) {
 	}
 
 	showStatePlain(st)
+
+	if *stateTail {
+		for range time.Tick(5 * time.Second) {
+			oldn := len(st.Temperature.History)
+			if err := c.UpdatePrinterState(ctx, st); err != nil {
+				log.Printf("Error updating: %v", err)
+				continue
+			}
+
+			for i := oldn; i < len(st.Temperature.History); i++ {
+				e := st.Temperature.History[i]
+				fmt.Printf("\t\t%v (%v)\n", e.Time(), time.Since(e.Time()))
+				maybePrintTemp("\t\t\tBed", e.Bed)
+				maybePrintTemp("\t\t\tTool0", e.Tool0)
+				maybePrintTemp("\t\t\tTool1", e.Tool1)
+			}
+			fmt.Printf("State: %v\n", st.State)
+		}
+	}
 }

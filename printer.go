@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"sort"
 	"time"
 )
 
@@ -97,6 +98,27 @@ type PrinterState struct {
 	}
 }
 
+// Merge the history in this PrinterState with the given history,
+// keeping all distinct timestamps with ascended ordering.
+func (p *PrinterState) MergeHistory(h []HistoricalPrinterTempEntry) {
+	seen := map[int]bool{}
+
+	var a []HistoricalPrinterTempEntry
+	for _, es := range [][]HistoricalPrinterTempEntry{p.Temperature.History, h} {
+		for _, e := range es {
+			if seen[e.TimeStamp] {
+				continue
+			}
+			seen[e.TimeStamp] = true
+			a = append(a, e)
+		}
+	}
+
+	sort.Slice(a, func(i, j int) bool { return a[i].TimeStamp < a[j].TimeStamp })
+	p.Temperature.History = a
+}
+
+// PrinterState fetches the current state of the printer.
 func (c *Client) PrinterState(ctx context.Context, history int) (*PrinterState, error) {
 	args := ""
 	if history > 0 {
@@ -108,4 +130,24 @@ func (c *Client) PrinterState(ctx context.Context, history int) (*PrinterState, 
 	}
 
 	return st, nil
+}
+
+// UpdateState updates all of the values of given state, including merging in
+// new history with existing history.
+func (c *Client) UpdatePrinterState(ctx context.Context, st *PrinterState) error {
+	nHist := 60
+	if len(st.Temperature.History) > 0 {
+		latestTs := st.Temperature.History[len(st.Temperature.History)-1].Time()
+		nHist = int((time.Since(latestTs) / 5) + 1)
+	}
+	nst, err := c.PrinterState(ctx, nHist)
+	if err != nil {
+		return err
+	}
+	nst.MergeHistory(st.Temperature.History)
+	st.SD = nst.SD
+	st.State = nst.State
+	st.Temperature = nst.Temperature
+
+	return nil
 }
