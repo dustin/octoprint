@@ -1,11 +1,10 @@
 package octoprint
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
-
-	"golang.org/x/net/context"
 
 	"time"
 )

@@ -1,10 +1,9 @@
 package octoprint
 
 import (
+	"context"
 	"io"
 	"net/url"
-
-	"golang.org/x/net/context"
 )
 
 // TimelapseConfig represents the configuration of tapelapse recording.
