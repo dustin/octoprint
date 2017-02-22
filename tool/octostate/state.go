@@ -9,6 +9,8 @@ import (
 	"os"
 	"time"
 
+	"golang.org/x/sync/errgroup"
+
 	"github.com/dustin/octoprint"
 )
 
@@ -64,34 +66,67 @@ func showStateCSV(st *octoprint.PrinterState) {
 }
 
 func showState(ctx context.Context, c *octoprint.Client, args []string) {
-	st, err := c.PrinterState(ctx, *stateHist)
-	if err != nil {
-		log.Fatalf("Error getting state: %v", err)
+	var pst *octoprint.PrinterState
+	var jst *octoprint.JobState
+
+	g := errgroup.Group{}
+
+	g.Go(func() error {
+		var err error
+		pst, err = c.PrinterState(ctx, *stateHist)
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		jst, err = c.JobState(ctx)
+		return err
+	})
+
+	if err := g.Wait(); err != nil {
+		log.Fatalf("Error getting initial state: %v", err)
 	}
 
 	if *stateFmt == "csv" {
-		showStateCSV(st)
+		showStateCSV(pst)
 		return
 	}
 
-	showStatePlain(st)
+	showStatePlain(pst)
 
 	if *stateTail {
 		for range time.Tick(5 * time.Second) {
-			oldn := len(st.Temperature.History)
-			if err := c.UpdatePrinterState(ctx, st); err != nil {
+			oldn := len(pst.Temperature.History)
+
+			g := errgroup.Group{}
+
+			g.Go(func() error {
+				return c.UpdatePrinterState(ctx, pst)
+			})
+
+			g.Go(func() error {
+				var err error
+				jst, err = c.JobState(ctx)
+				return err
+			})
+
+			if err := g.Wait(); err != nil {
 				log.Printf("Error updating: %v", err)
 				continue
 			}
 
-			for i := oldn; i < len(st.Temperature.History); i++ {
-				e := st.Temperature.History[i]
+			for i := oldn; i < len(pst.Temperature.History); i++ {
+				e := pst.Temperature.History[i]
 				fmt.Printf("\t\t%v (%v)\n", e.Time(), time.Since(e.Time()))
 				maybePrintTemp("\t\t\tBed", e.Bed)
 				maybePrintTemp("\t\t\tTool0", e.Tool0)
 				maybePrintTemp("\t\t\tTool1", e.Tool1)
 			}
-			fmt.Printf("State: %v\n", st.State)
+			fmt.Printf("State: %v\n", pst.State)
+			if jst.State == "Printing" {
+				fmt.Printf("Job State: %v %.0f%% %v done, %v to go\n", jst.State, jst.Progress.Completion,
+					time.Second*time.Duration(jst.Progress.PrintTime), time.Second*time.Duration(jst.Progress.PrintTimeLeft))
+			}
 		}
 	}
 }
