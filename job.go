@@ -4,17 +4,26 @@ import "golang.org/x/net/context"
 
 type JobState struct {
 	Job struct {
-		AveragePrintTime   *int `json:"averagePrintTime"`
-		EstimatedPrintTime *int `json:"estimatedPrintTime"`
-		Filament           *string
-		File               struct {
+		AveragePrintTime   *float64 `json:"averagePrintTime"`
+		EstimatedPrintTime *float64 `json:"estimatedPrintTime"`
+		Filament           struct {
+			Tool0 *struct {
+				Length float64
+				Volume float64
+			}
+			Tool1 *struct {
+				Length float64
+				Volume float64
+			}
+		}
+		File struct {
 			Timestamp int `json:"date"`
 			Name      string
 			Origin    string
 			Path      string
 			Size      int
 		}
-		LastPrintTimeStamp *int `json:"lastPrintTime"`
+		LastPrintTimeStamp *float64 `json:"lastPrintTime"`
 	}
 	Progress struct {
 		Completion          float64
