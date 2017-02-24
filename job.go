@@ -35,6 +35,7 @@ type JobState struct {
 	State string
 }
 
+// JobState returns the current job state from octoprint.
 func (c *Client) JobState(ctx context.Context) (*JobState, error) {
 	st := &JobState{}
 	if err := c.fetchJSON(ctx, "/api/job", "", st); err != nil {
