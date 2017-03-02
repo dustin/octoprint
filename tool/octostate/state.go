@@ -50,7 +50,7 @@ func appendTime(a []string, t *octoprint.PrinterTempState) []string {
 	return append(a, fmt.Sprint(t.Target), fmt.Sprint(t.Actual))
 }
 
-func showStateCSV(st *octoprint.PrinterState) {
+func showStateCSV(ctx context.Context, c *octoprint.Client, st *octoprint.PrinterState) {
 	w := csv.NewWriter(os.Stdout)
 	defer w.Flush()
 
@@ -62,6 +62,28 @@ func showStateCSV(st *octoprint.PrinterState) {
 		vals = appendTime(vals, e.Tool0)
 		vals = appendTime(vals, e.Tool1)
 		w.Write(vals)
+	}
+
+	if *stateTail {
+		w.Flush()
+		for range time.Tick(5 * time.Second) {
+			oldn := len(st.Temperature.History)
+
+			if err := c.UpdatePrinterState(ctx, st); err != nil {
+				log.Printf("Error updating: %v", err)
+				continue
+			}
+
+			for i := oldn; i < len(st.Temperature.History); i++ {
+				e := st.Temperature.History[i]
+				vals := []string{e.Time().Format(time.RFC3339Nano)}
+				vals = appendTime(vals, e.Bed)
+				vals = appendTime(vals, e.Tool0)
+				vals = appendTime(vals, e.Tool1)
+				w.Write(vals)
+			}
+			w.Flush()
+		}
 	}
 }
 
@@ -88,7 +110,7 @@ func showState(ctx context.Context, c *octoprint.Client, args []string) {
 	}
 
 	if *stateFmt == "csv" {
-		showStateCSV(pst)
+		showStateCSV(ctx, c, pst)
 		return
 	}
 
