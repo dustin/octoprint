@@ -57,8 +57,9 @@ func dlTimelineCmd(ctx context.Context, c *octoprint.Client, args []string) {
 				return err
 			}
 			defer r.Close()
-			_, err = io.Copy(f, r)
+			n, err := io.Copy(f, r)
 			if err != nil {
+				log.Printf("Copied %v of %v bytes before error: %v", n, tl.Size, err)
 				return err
 			}
 			if *dlRm {
